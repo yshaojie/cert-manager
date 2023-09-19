@@ -190,6 +190,7 @@ servers and webhook servers.`,
 	return cmd
 }
 
+// RunInjectorController 启动植入caBundle控制器
 func (o InjectorControllerOptions) RunInjectorController(ctx context.Context) error {
 	var defaultNamespaces map[string]cache.Config
 	if o.Namespace != "" {
@@ -290,6 +291,7 @@ func (o InjectorControllerOptions) RunInjectorController(ctx context.Context) er
 	opts := cainjector.SetupOptions{
 		Namespace:                    o.Namespace,
 		EnableCertificatesDataSource: o.EnableCertificateDataSource,
+		//需要植入caBundle的资源
 		EnabledReconcilersFor: map[string]bool{
 			cainjector.MutatingWebhookConfigurationName:   o.EnableMutatingWebhookConfigurationsInjectable,
 			cainjector.ValidatingWebhookConfigurationName: o.EnableValidatingWebhookConfigurationsInjectable,

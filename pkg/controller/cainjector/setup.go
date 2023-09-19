@@ -141,6 +141,7 @@ func RegisterAllInjectors(ctx context.Context, mgr ctrl.Manager, opts SetupOptio
 			err := fmt.Errorf("error making injectable indexable by inject-ca-from-secret annotation: %w", err)
 			return err
 		}
+		//只处理带有植入注解的资源
 		predicates := predicate.Funcs{
 			UpdateFunc: func(e event.UpdateEvent) bool {
 				return hasInjectableAnnotation(e.ObjectNew)
@@ -181,6 +182,7 @@ func RegisterAllInjectors(ctx context.Context, mgr ctrl.Manager, opts SetupOptio
 				Watches(new(cmapi.Certificate),
 					handler.EnqueueRequestsFromMapFunc(certToInjectableMapFuncBuilder(mgr.GetClient(), log, setup)))
 		}
+		//启动控制器
 		if err := b.Complete(r); err != nil {
 			return fmt.Errorf("error registering controller for %s: %w", setup.objType.GetName(), err)
 		}

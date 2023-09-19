@@ -71,11 +71,12 @@ type reconciler struct {
 // 注入证书ca数据
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// fetch the target object
+	//需要植入caBundle的资源
 	target := r.newInjectableTarget()
 
 	log := r.log.WithValues("kind", r.resourceName, "name", req.Name)
 	log.V(logf.DebugLevel).Info("Parsing injectable")
-
+	//查询需要植入的对象
 	if err := r.Client.Get(ctx, req.NamespacedName, target.AsObject()); err != nil {
 		if dropNotFound(err) == nil {
 			// don't requeue on deletions, which yield a non-found object
@@ -93,6 +94,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// ignore resources that are being deleted
+	//处于删除状态的资源无需处理
 	if !metaObj.GetDeletionTimestamp().IsZero() {
 		log.V(logf.DebugLevel).Info("ignoring", "reason", "object has a non-zero deletion timestamp")
 		return ctrl.Result{}, nil
@@ -126,6 +128,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	target.SetCA(caData)
 
 	// actually update with injected CA data
+	//更新数据
 	if utilfeature.DefaultFeatureGate.Enabled(feature.ServerSideApply) {
 		obj, patch := target.AsApplyObject()
 		if patch != nil {
