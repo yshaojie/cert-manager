@@ -38,6 +38,7 @@ import (
 
 const componentWebhook = "webhook"
 
+// NewServerCommand cert-manager所有资源的 webhook都在这里处理
 func NewServerCommand(stopCh <-chan struct{}) *cobra.Command {
 	ctx := cmdutil.ContextWithStopCh(context.Background(), stopCh)
 	log := logf.Log
@@ -45,12 +46,12 @@ func NewServerCommand(stopCh <-chan struct{}) *cobra.Command {
 
 	return newServerCommand(ctx, func(ctx context.Context, webhookConfig *config.WebhookConfiguration) error {
 		log := logf.FromContext(ctx, componentWebhook)
-
+		//构建webhook http服务
 		srv, err := cmwebhook.NewCertManagerWebhookServer(log, *webhookConfig)
 		if err != nil {
 			return err
 		}
-
+		// 启动http服务
 		return srv.Run(ctx)
 	}, os.Args[1:])
 }
