@@ -85,12 +85,14 @@ func NewController(
 
 	certificateInformer.Informer().AddEventHandler(&controllerpkg.QueuingEventHandler{Queue: queue})
 
+	//只处理该secret所属的Certificate
 	secretsInformer.Informer().AddEventHandler(&controllerpkg.BlockingEventHandler{
 		// Trigger reconciles on changes to any 'owned' secret resources
 		WorkFunc: certificates.EnqueueCertificatesForResourceUsingPredicates(log, queue, certificateInformer.Lister(), labels.Everything(),
 			predicate.ResourceOwnerOf,
 		),
 	})
+	//只处理该secret所属的Certificate
 	secretsInformer.Informer().AddEventHandler(&controllerpkg.BlockingEventHandler{
 		// Trigger reconciles on changes to certificates named as spec.secretName
 		WorkFunc: certificates.EnqueueCertificatesForResourceUsingPredicates(log, queue, certificateInformer.Lister(), labels.Everything(),
@@ -127,6 +129,9 @@ func init() {
 	isNextPrivateKeyLabelSelector = labels.NewSelector().Add(*r)
 }
 
+// ProcessItem 同步的核心逻辑Certificate
+// 这个控制器的作用就是，当Certificate需要生成证书时，只有一个初始化的Secret
+// 并且Secret.name==Certificate.Status.NextPrivateKeySecretName
 func (c *controller) ProcessItem(ctx context.Context, key string) error {
 	log := logf.FromContext(ctx).WithValues("key", key)
 	ctx = logf.NewContext(ctx, log)

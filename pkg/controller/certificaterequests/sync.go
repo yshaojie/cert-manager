@@ -51,6 +51,7 @@ func (c *Controller) Sync(ctx context.Context, cr *cmapi.CertificateRequest) (er
 	crCopy := cr.DeepCopy()
 
 	defer func() {
+		//在代码执行完毕后，更新CertificateRequest状态和注解
 		if saveErr := c.updateCertificateRequestStatusAndAnnotations(ctx, cr, crCopy); saveErr != nil {
 			err = utilerrors.NewAggregate([]error{saveErr, err})
 		}
@@ -119,6 +120,7 @@ func (c *Controller) Sync(ctx context.Context, cr *cmapi.CertificateRequest) (er
 	}
 
 	// check ready condition
+	//保证Issuer是Ready状态
 	if !apiutil.IssuerHasCondition(issuerObj, cmapi.IssuerCondition{
 		Type:   cmapi.IssuerConditionReady,
 		Status: cmmeta.ConditionTrue,
@@ -138,6 +140,7 @@ func (c *Controller) Sync(ctx context.Context, cr *cmapi.CertificateRequest) (er
 	dbg.Info("invoking sign function as existing certificate does not exist")
 
 	// Attempt to call the Sign function on our issuer
+	//生成签名证书
 	resp, err := c.issuer.Sign(ctx, crCopy, issuerObj)
 	if err != nil {
 		log.Error(err, "error issuing certificate request")

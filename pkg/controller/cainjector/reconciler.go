@@ -68,6 +68,7 @@ type reconciler struct {
 
 // Reconcile attempts to ensure that a particular injectable has all the CAs injected that
 // it has requested.
+// 注入证书ca数据
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// fetch the target object
 	target := r.newInjectableTarget()
@@ -98,12 +99,13 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// ensure that it wants injection
+	//根据注解获取ca数据源
 	dataSource, err := r.caDataSourceFor(log, metaObj)
 	if err != nil {
 		log.V(logf.DebugLevel).Info("failed to determine ca data source for injectable")
 		return ctrl.Result{}, nil
 	}
-
+	//读取ca数据
 	caData, err := dataSource.ReadCA(ctx, log, metaObj, r.namespace)
 	if apierrors.IsForbidden(err) {
 		log.V(logf.InfoLevel).Info("cainjector was forbidden to retrieve the ca data source")
@@ -120,6 +122,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// actually do the injection
+	//设置ca数据
 	target.SetCA(caData)
 
 	// actually update with injected CA data

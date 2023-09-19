@@ -120,6 +120,8 @@ func NewController(
 	}, queue, mustSync
 }
 
+// ProcessItem 处理certificate的变更
+// 当Certificate或者依赖的资源变更后，生成新的CertificateRequest
 func (c *controller) ProcessItem(ctx context.Context, key string) error {
 	log := logf.FromContext(ctx).WithValues("key", key)
 
@@ -139,6 +141,7 @@ func (c *controller) ProcessItem(ctx context.Context, key string) error {
 		return err
 	}
 
+	//当Certificate待Issuing时，才会处理CertificateRequest
 	if !apiutil.CertificateHasCondition(crt, cmapi.CertificateCondition{
 		Type:   cmapi.CertificateConditionIssuing,
 		Status: cmmeta.ConditionTrue,
@@ -170,6 +173,7 @@ func (c *controller) ProcessItem(ctx context.Context, key string) error {
 	}
 
 	// Discover all 'owned' CertificateRequests
+	//获取所有属于Certificate的CertificateRequest资源
 	requests, err := certificates.ListCertificateRequestsMatchingPredicates(c.certificateRequestLister.CertificateRequests(crt.Namespace), labels.Everything(), predicate.ResourceOwnedBy(crt))
 	if err != nil {
 		return err
@@ -177,6 +181,7 @@ func (c *controller) ProcessItem(ctx context.Context, key string) error {
 
 	// delete any existing CertificateRequest resources that do not have a
 	// revision annotation
+	//清除掉不包含注解“cert-manager.io/certificate-revision”的CertificateRequest
 	if requests, err = c.deleteRequestsWithoutRevision(ctx, requests...); err != nil {
 		return err
 	}
@@ -187,16 +192,18 @@ func (c *controller) ProcessItem(ctx context.Context, key string) error {
 	}
 	nextRevision := currentCertificateRevision + 1
 
+	//清除掉Revision不等于nextRevision的CertificateRequest
 	requests, err = requestsWithRevision(requests, nextRevision)
 	if err != nil {
 		return err
 	}
 
+	//清除掉跟Certificate内容不匹配的CertificateRequest
 	requests, err = c.deleteRequestsNotMatchingSpec(ctx, crt, pk.Public(), requests...)
 	if err != nil {
 		return err
 	}
-
+	//清除掉已经失败的CertificateRequest
 	requests, err = c.deleteCurrentFailedRequests(ctx, crt, requests...)
 	if err != nil {
 		return err
@@ -215,7 +222,7 @@ func (c *controller) ProcessItem(ctx context.Context, key string) error {
 		// is up to date above.
 		return nil
 	}
-
+	//创建CertificateRequest
 	return c.createNewCertificateRequest(ctx, crt, pk, nextRevision, nextPrivateKeySecret.Name)
 }
 

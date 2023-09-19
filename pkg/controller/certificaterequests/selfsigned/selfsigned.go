@@ -197,6 +197,7 @@ func (s *SelfSigned) Sign(ctx context.Context, cr *cmapi.CertificateRequest, iss
 	}
 
 	// sign and encode the certificate
+	//签名生成证书
 	certPem, _, err := s.signingFn(template, template, publickey, privatekey)
 	if err != nil {
 		message := "Error signing certificate"

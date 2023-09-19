@@ -147,6 +147,7 @@ func NewController(
 	}, queue, mustSync
 }
 
+// ProcessItem 核心业务是更新Certificate对应的Secret数据
 func (c *controller) ProcessItem(ctx context.Context, key string) error {
 	// TODO: Change to globals.DefaultControllerContextTimeout as part of a wider effort to ensure we have
 	// failsafe timeouts in every controller
@@ -328,6 +329,7 @@ func (c *controller) ProcessItem(ctx context.Context, key string) error {
 	// If the CertificateRequest is valid and ready, verify its status and issue
 	// accordingly.
 	if crReadyCond.Reason == cmapi.CertificateRequestReasonIssued {
+		//更新secret数据
 		return c.issueCertificate(ctx, nextRevision, crt, req, pk)
 	}
 
